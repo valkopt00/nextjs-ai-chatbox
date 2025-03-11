@@ -35,8 +35,8 @@ export default async function handler(req, res) {
         {
           model: "gpt-4o",
           messages: validatedMessages,
-          max_tokens: 150, // Aumentei um pouco o limite de tokens
-          temperature: 0.7, // Adicionei temperatura para controlar a criatividade
+          max_tokens: 150, 
+          temperature: 0.7, 
         },
         {
           headers: {
