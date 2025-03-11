@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         {
           messages: input,
           max_tokens: 50,
-          model: "gpt-3.5-turbo",
+          model: "gpt-4o",
         },
         {
           headers: {
