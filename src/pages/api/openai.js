@@ -11,13 +11,30 @@ export default async function handler(req, res) {
     if (!Array.isArray(input)) {
       return res.status(400).json({ error: "Input deve ser um array de mensagens" });
     }
+    
+    // Validar e corrigir o formato das mensagens
+    const validRoles = ['system', 'assistant', 'user', 'function', 'tool', 'developer'];
+    const validatedMessages = input.map(msg => {
+      // Verificar se a mensagem tem a estrutura correta
+      if (!msg || typeof msg !== 'object' || !msg.content) {
+        return { role: 'user', content: String(msg) };
+      }
+      
+      // Verificar se o role é válido
+      if (!msg.role || !validRoles.includes(msg.role)) {
+        // Se o role for 'Eu' ou inválido, converter para 'user'
+        return { ...msg, role: 'user' };
+      }
+      
+      return msg;
+    });
 
     try {
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-4o",
-          messages: input,
+          messages: validatedMessages,
           max_tokens: 150, // Aumentei um pouco o limite de tokens
           temperature: 0.7, // Adicionei temperatura para controlar a criatividade
         },
@@ -38,6 +55,7 @@ export default async function handler(req, res) {
       
       // Log para debugging (remova em produção)
       console.log("API Response:", response.data);
+      console.log("Mensagens enviadas:", validatedMessages);
       
       res.status(200).json({ output });
     } catch (error) {
