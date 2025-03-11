@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -8,27 +8,27 @@ export default async function handler(req, res) {
 
     try {
       const response = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
         {
-          messages: input,
-          max_tokens: 50,
-          model: "gpt-3.5-turbo",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: input }],
+            },
+          ],
         }
       );
 
       const output =
-        response.data.choices[0]?.message?.content?.trim() || "Sorry, I do not understand.";
+        response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+        "Desculpa, não consegui entender.";
+
       res.status(200).json({ output });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Internal Server Error" });
+      res.status(500).json({ error: "Erro interno no servidor" });
     }
   } else {
-    res.status(405).json({ error: "Method Not Allowed" });
+    res.status(405).json({ error: "Método não permitido" });
   }
 }
