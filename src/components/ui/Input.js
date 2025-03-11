@@ -4,7 +4,7 @@ import { forwardRef } from "react";
 const Input = forwardRef(({ label, type = "text", name, value, onChange, disabled }, ref) => {
   return (
     <div className="mb-4 w-full">
-      <label className="block text-sm font-medium text-gray-300">{label}</label>
+      <label className="block text-sm font-medium text-amber-200">{label}</label>
       <input
         ref={ref}
         type={type}
