@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -8,27 +8,27 @@ export default async function handler(req, res) {
 
     try {
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+        "https://api.aimlapi.com/v1",
         {
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: input }],
-            },
-          ],
+          messages: input,
+          max_tokens: 50,
+          model: "gpt-3.5-turbo",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+          },
         }
       );
 
       const output =
-        response.data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-        "Desculpa, não consegui entender.";
-
+        response.data.choices[0]?.message?.content?.trim() || "Sorry, I do not understand.";
       res.status(200).json({ output });
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Erro interno no servidor" });
+      res.status(500).json({ error: "Internal Server Error" });
     }
   } else {
-    res.status(405).json({ error: "Método não permitido" });
+    res.status(405).json({ error: "Method Not Allowed" });
   }
 }
