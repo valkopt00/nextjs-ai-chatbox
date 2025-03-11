@@ -8,12 +8,12 @@ export default function Home() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const msg = [...messages, { content: input, role: "Eu" }];
+    const msg = [...messages, { content: input, role: "user" }];
     setMessages(msg);
     setInput("");
 
     const response = await getOpenAIResponse(msg);
-    setMessages([...msg, { content: response, role: "Assistente" }]);
+    setMessages([...msg, { content: response, role: "assistant" }]);
   };
 
   const getOpenAIResponse = async (userInput) => {
