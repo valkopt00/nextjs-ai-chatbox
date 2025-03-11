@@ -80,7 +80,7 @@ export default function Home() {
       <div className="flex flex-col w-full h-screen max-w-3xl mx-auto">
         {/* Header (opcional) */}
         <div className="p-3 sm:p-4 bg-gray-800 border-b border-gray-700">
-          <h1 className="text-lg sm:text-xl font-bold text-center text-amber-200">Meu ChatBot</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-center text-amber-200">BuddyBot</h1>
         </div>
 
         {/* Área de mensagens com scroll - Usa flex-1 para ocupar espaço disponível */}
