@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
     try {
       const response = await axios.post(
-        "https://api.aimlapi.com/v1",
+        "https://api.openai.com/v1/chat/completions",
         {
           messages: input,
           max_tokens: 50,
