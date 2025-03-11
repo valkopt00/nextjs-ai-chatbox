@@ -1,34 +1,53 @@
 import axios from "axios";
 
-const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+// Use OPENAI_API_KEY sem o prefixo NEXT_PUBLIC_
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
     const { input } = req.body;
 
+    // Verificar se input é um array válido de mensagens
+    if (!Array.isArray(input)) {
+      return res.status(400).json({ error: "Input deve ser um array de mensagens" });
+    }
+
     try {
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
-          messages: input,
-          max_tokens: 50,
           model: "gpt-4o",
+          messages: input,
+          max_tokens: 150, // Aumentei um pouco o limite de tokens
+          temperature: 0.7, // Adicionei temperatura para controlar a criatividade
         },
         {
           headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
           },
         }
       );
 
-      const output =
-        response.data.choices[0]?.message?.content?.trim() || "Sorry, I do not understand.";
+      // Verificar se a resposta contém os dados esperados
+      if (!response.data || !response.data.choices || !response.data.choices[0]) {
+        throw new Error("Resposta inesperada da API da OpenAI");
+      }
+
+      const output = response.data.choices[0]?.message?.content?.trim() || "Desculpe, não entendi.";
+      
+      // Log para debugging (remova em produção)
+      console.log("API Response:", response.data);
+      
       res.status(200).json({ output });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal Server Error" });
+      console.error("Erro detalhado:", error.response?.data || error.message);
+      
+      // Fornecer mensagem de erro mais específica
+      const errorMessage = error.response?.data?.error?.message || error.message || "Erro no servidor";
+      res.status(500).json({ error: errorMessage });
     }
   } else {
-    res.status(405).json({ error: "Method Not Allowed" });
+    res.status(405).json({ error: "Método não permitido" });
   }
 }
