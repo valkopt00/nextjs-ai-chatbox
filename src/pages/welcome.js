@@ -79,7 +79,7 @@ export default function Home() {
               <div
                 key={index}
                 className={`mb-3 p-3 rounded ${
-                  message.role === "Assistente"
+                  message.role === "assistant"
                     ? "bg-gray-700 text-amber-600"
                     : "bg-gray-600 text-amber-200"
                 }`}
