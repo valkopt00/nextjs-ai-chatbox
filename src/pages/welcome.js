@@ -102,7 +102,7 @@ export default function Home() {
       setMessages([
         ...updatedMessages,
         {
-          content: "Desculpe, ocorreu um erro ao processar sua mensagem.",
+          content: "Ocorreu um erro ao processar a sua mensagem.",
           role: "assistant",
         },
       ]);
