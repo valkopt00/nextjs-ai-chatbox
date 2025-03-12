@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       // Adicionar instrução para usar português de Portugal
       const systemMessage = {
         role: "system",
-        content: "Responda sempre em português de Portugal, usando expressões, vocabulário e construções gramaticais típicas de Portugal."
+        content: "O teu nome é BuddyBot. Responda sempre em português de Portugal, usando expressões, vocabulário e construções gramaticais típicas de Portugal."
       };
 
       // Verificar se já existe uma mensagem de sistema
