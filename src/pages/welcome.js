@@ -147,7 +147,7 @@ export default function Home() {
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               className="flex-1 px-3 py-2 text-sm sm:text-base rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 border border-gray-600"
-              placeholder="Digite sua mensagem..."
+              placeholder="Digite a sua mensagem..."
             />
             <button
               onClick={sendMessage}
