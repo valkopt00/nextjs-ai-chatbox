@@ -11,8 +11,6 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // Estados para gestão de sessões (histórico)
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -23,18 +21,14 @@ export default function Home() {
   useEffect(() => {
     try {
       const storedSessions = localStorage.getItem("chatSessions");
-      if (storedSessions) {
-        setSessions(JSON.parse(storedSessions));
-      }
-      
-      // Se houver uma sessão corrente salva, carrega-a
+      if (storedSessions) setSessions(JSON.parse(storedSessions));
+
       const lastSession = localStorage.getItem("currentSession");
       if (lastSession) {
         const session = JSON.parse(lastSession);
         setCurrentSessionId(session.id);
         setMessages(session.messages || []);
       } else {
-        // Se não houver sessão atual, cria uma nova
         startNewConversation();
       }
     } catch (error) {
@@ -43,24 +37,12 @@ export default function Home() {
     }
   }, []);
 
-  // Guarda as sessões no localStorage sempre que elas mudarem
-  useEffect(() => {
-    if (sessions.length > 0) {
-      localStorage.setItem("chatSessions", JSON.stringify(sessions));
-    }
-  }, [sessions]);
-
-  // Atualiza a sessão corrente sempre que as mensagens ou o id da sessão mudarem
+  // Guarda as sessões no localStorage sempre que as mensagens mudarem
   useEffect(() => {
     if (currentSessionId) {
-      const currentSession = { 
-        id: currentSessionId, 
-        messages: messages, 
-        updatedAt: new Date().toISOString() 
-      };
+      const currentSession = { id: currentSessionId, messages, updatedAt: new Date().toISOString() };
       localStorage.setItem("currentSession", JSON.stringify(currentSession));
-      
-      // Atualiza ou adiciona a sessão no histórico
+
       setSessions((prevSessions) => {
         const otherSessions = prevSessions.filter((s) => s.id !== currentSessionId);
         return [currentSession, ...otherSessions];
@@ -68,38 +50,22 @@ export default function Home() {
     }
   }, [messages, currentSessionId]);
 
-  // Rola para o final do chat sempre que uma nova mensagem é adicionada
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  // Inicia uma nova conversa (nova sessão)
+  // Criar uma nova conversa
   const startNewConversation = () => {
     const newSessionId = new Date().getTime().toString();
     setCurrentSessionId(newSessionId);
     setMessages([]);
-    
-    const newSession = { 
-      id: newSessionId, 
-      messages: [], 
-      updatedAt: new Date().toISOString() 
-    };
-    
-    setSessions(prev => [newSession, ...prev]);
+
+    const newSession = { id: newSessionId, messages: [], updatedAt: new Date().toISOString() };
+    setSessions((prev) => [newSession, ...prev]);
     localStorage.setItem("currentSession", JSON.stringify(newSession));
   };
 
+  // Enviar mensagem
   const sendMessage = async () => {
     if (!input.trim()) return;
+    if (!currentSessionId) startNewConversation();
 
-    // Cria sessão se não existir
-    if (!currentSessionId) {
-      startNewConversation();
-    }
-
-    // Adiciona a mensagem do utilizador
     const userMessage = { content: input, role: "user" };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -107,27 +73,11 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const formattedMessages = updatedMessages.map((msg) => ({
-        role: msg.role === "user" ? "user" : "assistant",
-        content: msg.content,
-      }));
-
-      const messagesWithSystem = [
-        { role: "system", content: "Você é um assistente útil e amigável." },
-        ...formattedMessages,
-      ];
-
-      const response = await getOpenAIResponse(messagesWithSystem);
+      const response = await getOpenAIResponse(updatedMessages);
       setMessages([...updatedMessages, { content: response, role: "assistant" }]);
     } catch (error) {
       console.error("Erro ao obter resposta:", error);
-      setMessages([
-        ...updatedMessages,
-        {
-          content: "Ocorreu um erro ao processar a sua mensagem.",
-          role: "assistant",
-        },
-      ]);
+      setMessages([...updatedMessages, { content: "Erro ao processar a mensagem.", role: "assistant" }]);
     } finally {
       setIsLoading(false);
     }
@@ -140,40 +90,27 @@ export default function Home() {
       body: JSON.stringify({ input: messagesInput }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Erro ao obter resposta");
-    }
+    if (!response.ok) throw new Error("Erro ao obter resposta");
     const data = await response.json();
     return data.output;
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  // Carrega uma sessão do histórico
+  // Carregar uma sessão do histórico
   const loadSession = (session) => {
     setCurrentSessionId(session.id);
     setMessages(session.messages || []);
     setShowHistory(false);
   };
 
-  // Remove uma sessão do histórico
+  // Eliminar uma sessão do histórico
   const deleteSession = (sessionId, e) => {
     e.stopPropagation();
-    setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
-    if (sessionId === currentSessionId) {
-      startNewConversation();
-    }
+    setSessions((prevSessions) => prevSessions.filter((s) => s.id !== sessionId));
+    if (sessionId === currentSessionId) startNewConversation();
   };
 
-  // Função de logout: redireciona para a página de autenticação
+  // Logout → Redirecionar para a página de autenticação
   const handleLogout = () => {
-    // Opcional: limpar dados do localStorage se necessário
     router.push("/");
   };
 
@@ -191,45 +128,37 @@ export default function Home() {
 
       {/* Área principal do chat */}
       <div className="flex flex-col w-full max-w-3xl mx-auto h-screen">
-        {/* Header fixo */}
-        <div className="sticky top-0 z-10 p-3 sm:p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
-          <h1 className="text-lg sm:text-xl font-bold text-center text-amber-200">
+        {/* Cabeçalho */}
+        <div className="sticky top-0 z-10 p-3 sm:p-4 bg-gray-800 border-b border-gray-700 flex items-center">
+          {/* Botão Histórico (Esquerda) */}
+          <button
+            onClick={() => setShowHistory(true)}
+            className="px-3 py-2 bg-amber-500 text-black rounded-lg"
+          >
+            Histórico
+          </button>
+
+          {/* Nome BuddyBot (Centro) */}
+          <h1 className="flex-1 text-lg sm:text-xl font-bold text-center text-amber-200">
             BuddyBot
           </h1>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setShowHistory(true)}
-              className="px-3 py-2 bg-amber-500 text-black rounded-lg"
-            >
-              Histórico
-            </button>
-            {/* Botão de Logout */}
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 bg-red-500 text-white rounded-lg"
-            >
-              Logout
-            </button>
-          </div>
+
+          {/* Botão Logout (Direita) */}
+          <button
+            onClick={handleLogout}
+            className="px-3 py-2 bg-red-500 text-white rounded-lg"
+          >
+            Logout
+          </button>
         </div>
 
         {/* Lista de mensagens */}
-        <MessageList 
-          messages={messages}
-          chatContainerRef={chatContainerRef}
-          isLoading={isLoading}
-        />
+        <MessageList messages={messages} chatContainerRef={chatContainerRef} isLoading={isLoading} />
 
         {/* Componente de input */}
-        <MessageInput 
-          input={input}
-          setInput={setInput}
-          handleKeyDown={handleKeyDown}
-          sendMessage={sendMessage}
-          isLoading={isLoading}
-        />
+        <MessageInput input={input} setInput={setInput} sendMessage={sendMessage} isLoading={isLoading} />
 
-        {/* Estilo global para scrollbar */}
+        {/* Estilo para scrollbar */}
         <style jsx global>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
