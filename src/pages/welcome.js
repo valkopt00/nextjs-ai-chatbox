@@ -9,67 +9,74 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Estados para gerenciamento de sessões (histórico)
+  // Estados para gestão de sessões (histórico)
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   const chatContainerRef = useRef(null);
 
-  // Obtém o ID do utilizador (supostamente guardado após o login)
-  const userId = localStorage.getItem("userId");
-
-  // Carrega sessões salvas no localStorage ao montar o componente
+  // Apenas no cliente: obtem o userId do localStorage
   useEffect(() => {
-    try {
-      if (userId) {
-        const storedSessions = localStorage.getItem(`chatSessions_${userId}`);
-        if (storedSessions) {
-          setSessions(JSON.parse(storedSessions));
-        }
-        
-        // Carrega a sessão atual do utilizador
-        const lastSession = localStorage.getItem(`currentSession_${userId}`);
-        if (lastSession) {
-          const session = JSON.parse(lastSession);
-          setCurrentSessionId(session.id);
-          setMessages(session.messages || []);
+    if (typeof window !== "undefined") {
+      setUserId(localStorage.getItem("userId"));
+    }
+  }, []);
+
+  // Carrega sessões salvas no localStorage após o userId estar definido
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        if (userId) {
+          const storedSessions = localStorage.getItem(`chatSessions_${userId}`);
+          if (storedSessions) {
+            setSessions(JSON.parse(storedSessions));
+          }
+          const lastSession = localStorage.getItem(`currentSession_${userId}`);
+          if (lastSession) {
+            const session = JSON.parse(lastSession);
+            setCurrentSessionId(session.id);
+            setMessages(session.messages || []);
+          } else {
+            startNewConversation();
+          }
         } else {
-          startNewConversation();
+          // Se não houver userId, utiliza as chaves genéricas
+          const storedSessions = localStorage.getItem("chatSessions");
+          if (storedSessions) {
+            setSessions(JSON.parse(storedSessions));
+          }
+          const lastSession = localStorage.getItem("currentSession");
+          if (lastSession) {
+            const session = JSON.parse(lastSession);
+            setCurrentSessionId(session.id);
+            setMessages(session.messages || []);
+          } else {
+            startNewConversation();
+          }
         }
-      } else {
-        // Se não houver userId, utiliza as chaves genéricas
-        const storedSessions = localStorage.getItem("chatSessions");
-        if (storedSessions) {
-          setSessions(JSON.parse(storedSessions));
-        }
-        const lastSession = localStorage.getItem("currentSession");
-        if (lastSession) {
-          const session = JSON.parse(lastSession);
-          setCurrentSessionId(session.id);
-          setMessages(session.messages || []);
-        } else {
-          startNewConversation();
-        }
+      } catch (error) {
+        console.error("Erro ao carregar sessões:", error);
+        startNewConversation();
       }
-    } catch (error) {
-      console.error("Erro ao carregar sessões:", error);
-      startNewConversation();
     }
   }, [userId]);
 
-  // Guarda as sessões no localStorage sempre que elas mudarem
+  // Guarda as sessões no localStorage sempre que elas mudem
   useEffect(() => {
-    if (userId) {
-      localStorage.setItem(`chatSessions_${userId}`, JSON.stringify(sessions));
-    } else {
-      localStorage.setItem("chatSessions", JSON.stringify(sessions));
+    if (typeof window !== "undefined") {
+      if (userId) {
+        localStorage.setItem(`chatSessions_${userId}`, JSON.stringify(sessions));
+      } else {
+        localStorage.setItem("chatSessions", JSON.stringify(sessions));
+      }
     }
   }, [sessions, userId]);
 
-  // Atualiza a sessão corrente sempre que as mensagens ou o id da sessão mudarem
+  // Atualiza a sessão corrente sempre que as mensagens ou o id da sessão mudem
   useEffect(() => {
-    if (currentSessionId) {
+    if (typeof window !== "undefined" && currentSessionId) {
       const currentSession = { 
         id: currentSessionId, 
         messages: messages, 
@@ -80,8 +87,6 @@ export default function Home() {
       } else {
         localStorage.setItem("currentSession", JSON.stringify(currentSession));
       }
-      
-      // Atualiza ou adiciona a sessão no histórico
       setSessions((prevSessions) => {
         const otherSessions = prevSessions.filter((s) => s.id !== currentSessionId);
         return [currentSession, ...otherSessions];
@@ -109,22 +114,22 @@ export default function Home() {
     };
     
     setSessions(prev => [newSession, ...prev]);
-    if (userId) {
-      localStorage.setItem(`currentSession_${userId}`, JSON.stringify(newSession));
-    } else {
-      localStorage.setItem("currentSession", JSON.stringify(newSession));
+    if (typeof window !== "undefined") {
+      if (userId) {
+        localStorage.setItem(`currentSession_${userId}`, JSON.stringify(newSession));
+      } else {
+        localStorage.setItem("currentSession", JSON.stringify(newSession));
+      }
     }
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Cria sessão se não existir
     if (!currentSessionId) {
       startNewConversation();
     }
 
-    // Adiciona a mensagem do utilizador
     const userMessage = { content: input, role: "user" };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -132,21 +137,17 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // Formata as mensagens para enviar à API
       const formattedMessages = updatedMessages.map((msg) => ({
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content,
       }));
 
-      // Mensagem de sistema para orientar o comportamento do assistente
       const messagesWithSystem = [
         { role: "system", content: "Você é um assistente útil e amigável." },
         ...formattedMessages,
       ];
 
       const response = await getOpenAIResponse(messagesWithSystem);
-
-      // Adiciona a resposta do assistente ao histórico
       setMessages([...updatedMessages, { content: response, role: "assistant" }]);
     } catch (error) {
       console.error("Erro ao obter resposta:", error);
@@ -185,21 +186,15 @@ export default function Home() {
     }
   };
 
-  // Carrega uma sessão do histórico
   const loadSession = (session) => {
     setCurrentSessionId(session.id);
     setMessages(session.messages || []);
     setShowHistory(false);
   };
 
-  // Remove uma sessão do histórico
   const deleteSession = (sessionId, e) => {
     e.stopPropagation();
-    setSessions(prevSessions => {
-      const filtered = prevSessions.filter(s => s.id !== sessionId);
-      return filtered;
-    });
-    
+    setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
     if (sessionId === currentSessionId) {
       startNewConversation();
     }
@@ -207,7 +202,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
-      {/* Componente de histórico de conversas */}
       <ChatHistory 
         sessions={sessions}
         loadSession={loadSession}
@@ -217,9 +211,7 @@ export default function Home() {
         setShowHistory={setShowHistory}
       />
 
-      {/* Área principal do chat */}
       <div className="flex flex-col w-full max-w-3xl mx-auto h-screen">
-        {/* Header fixo */}
         <div className="sticky top-0 z-10 p-3 sm:p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
           <h1 className="text-lg sm:text-xl font-bold text-center text-amber-200">
             BuddyBot
@@ -234,14 +226,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Lista de mensagens */}
         <MessageList 
           messages={messages}
           chatContainerRef={chatContainerRef}
           isLoading={isLoading}
         />
 
-        {/* Componente de input */}
         <MessageInput 
           input={input}
           setInput={setInput}
@@ -250,7 +240,6 @@ export default function Home() {
           isLoading={isLoading}
         />
 
-        {/* Estilo global para scrollbar */}
         <style jsx global>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
