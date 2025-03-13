@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { coy } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import MarkdownRender from "./components/MarkdownRender";
 
 // Componente customizado para renderização de blocos de código
 const MarkdownRender = ({ node, inline, className, children, ...props }) => {
