@@ -16,37 +16,56 @@ export default function Home() {
 
   const chatContainerRef = useRef(null);
 
+  // Obtém o ID do utilizador (supostamente guardado após o login)
+  const userId = localStorage.getItem("userId");
+
   // Carrega sessões salvas no localStorage ao montar o componente
   useEffect(() => {
     try {
-      const storedSessions = localStorage.getItem("chatSessions");
-      if (storedSessions) {
-        setSessions(JSON.parse(storedSessions));
-      }
-      
-      // Se houver uma sessão corrente salva, carrega ela
-      const lastSession = localStorage.getItem("currentSession");
-      if (lastSession) {
-        const session = JSON.parse(lastSession);
-        setCurrentSessionId(session.id);
-        setMessages(session.messages || []);
+      if (userId) {
+        const storedSessions = localStorage.getItem(`chatSessions_${userId}`);
+        if (storedSessions) {
+          setSessions(JSON.parse(storedSessions));
+        }
+        
+        // Carrega a sessão atual do utilizador
+        const lastSession = localStorage.getItem(`currentSession_${userId}`);
+        if (lastSession) {
+          const session = JSON.parse(lastSession);
+          setCurrentSessionId(session.id);
+          setMessages(session.messages || []);
+        } else {
+          startNewConversation();
+        }
       } else {
-        // Se não houver sessão atual, cria uma nova
-        startNewConversation();
+        // Se não houver userId, utiliza as chaves genéricas
+        const storedSessions = localStorage.getItem("chatSessions");
+        if (storedSessions) {
+          setSessions(JSON.parse(storedSessions));
+        }
+        const lastSession = localStorage.getItem("currentSession");
+        if (lastSession) {
+          const session = JSON.parse(lastSession);
+          setCurrentSessionId(session.id);
+          setMessages(session.messages || []);
+        } else {
+          startNewConversation();
+        }
       }
     } catch (error) {
       console.error("Erro ao carregar sessões:", error);
-      // Inicia uma nova sessão em caso de erro
       startNewConversation();
     }
-  }, []);
+  }, [userId]);
 
-  // Salva as sessões no localStorage sempre que elas mudarem
+  // Guarda as sessões no localStorage sempre que elas mudarem
   useEffect(() => {
-    if (sessions.length > 0) {
+    if (userId) {
+      localStorage.setItem(`chatSessions_${userId}`, JSON.stringify(sessions));
+    } else {
       localStorage.setItem("chatSessions", JSON.stringify(sessions));
     }
-  }, [sessions]);
+  }, [sessions, userId]);
 
   // Atualiza a sessão corrente sempre que as mensagens ou o id da sessão mudarem
   useEffect(() => {
@@ -56,18 +75,19 @@ export default function Home() {
         messages: messages, 
         updatedAt: new Date().toISOString() 
       };
-      localStorage.setItem("currentSession", JSON.stringify(currentSession));
+      if (userId) {
+        localStorage.setItem(`currentSession_${userId}`, JSON.stringify(currentSession));
+      } else {
+        localStorage.setItem("currentSession", JSON.stringify(currentSession));
+      }
       
       // Atualiza ou adiciona a sessão no histórico
       setSessions((prevSessions) => {
-        // Remove a sessão atual se já existir na lista
         const otherSessions = prevSessions.filter((s) => s.id !== currentSessionId);
-        
-        // Adiciona a sessão atualizada no início da lista
         return [currentSession, ...otherSessions];
       });
     }
-  }, [messages, currentSessionId]);
+  }, [messages, currentSessionId, userId]);
 
   // Rola para o final do chat sempre que uma nova mensagem é adicionada
   useEffect(() => {
@@ -82,7 +102,6 @@ export default function Home() {
     setCurrentSessionId(newSessionId);
     setMessages([]);
     
-    // Adiciona a nova sessão na lista
     const newSession = { 
       id: newSessionId, 
       messages: [], 
@@ -90,7 +109,11 @@ export default function Home() {
     };
     
     setSessions(prev => [newSession, ...prev]);
-    localStorage.setItem("currentSession", JSON.stringify(newSession));
+    if (userId) {
+      localStorage.setItem(`currentSession_${userId}`, JSON.stringify(newSession));
+    } else {
+      localStorage.setItem("currentSession", JSON.stringify(newSession));
+    }
   };
 
   const sendMessage = async () => {
@@ -101,7 +124,7 @@ export default function Home() {
       startNewConversation();
     }
 
-    // Adiciona a mensagem do usuário
+    // Adiciona a mensagem do utilizador
     const userMessage = { content: input, role: "user" };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -171,14 +194,12 @@ export default function Home() {
 
   // Remove uma sessão do histórico
   const deleteSession = (sessionId, e) => {
-    e.stopPropagation(); // Evita que o clique propague para o elemento pai
-    
+    e.stopPropagation();
     setSessions(prevSessions => {
       const filtered = prevSessions.filter(s => s.id !== sessionId);
       return filtered;
     });
     
-    // Se a sessão atual foi deletada, inicia uma nova
     if (sessionId === currentSessionId) {
       startNewConversation();
     }
@@ -231,7 +252,6 @@ export default function Home() {
 
         {/* Estilo global para scrollbar */}
         <style jsx global>{`
-          /* Estilizando scrollbar para Webkit (Chrome, Safari, Edge, etc) */
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }
