@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import ChatHistory from "@/components/ChatHistory";
 import MessageInput from "@/components/MessageInput";
 import MessageList from "@/components/MessageList";
-import PwaInstallButton from "@/components/PwaInstallButton";
 
 export default function Home() {
   // Estados do chat
@@ -205,7 +204,6 @@ export default function Home() {
             BuddyBot
           </h1>
           <div className="flex space-x-2">
-            <PwaInstallButton />
             <button
               onClick={() => setShowHistory(true)}
               className="px-3 py-2 bg-amber-500 text-black rounded-lg"
