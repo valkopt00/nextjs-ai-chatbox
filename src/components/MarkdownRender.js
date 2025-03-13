@@ -85,7 +85,6 @@ const MarkdownRender = ({ node, inline, className, children, ...props }) => {
         italic: { fontStyle: 'italic' }
       }} 
       language={match[1]} 
-      PreTag="div" 
       {...props}
     >
       {String(children).replace(/\n$/, "")}
