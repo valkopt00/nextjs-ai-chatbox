@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import ChatHistory from "./components/ChatHistory";
-import MessageInput from "./components/MessageInput";
-import MessageList from "./components/MessageList";
-import PwaInstallButton from "./components/PwaInstallButton";
+import ChatHistory from "../src/components/ChatHistory";
+import MessageInput from "../src/components/MessageInput";
+import MessageList from "../src/components/MessageList";
+import PwaInstallButton from "../src/components/PwaInstallButton";
 
 export default function Home() {
   // Estados do chat
