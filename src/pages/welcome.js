@@ -33,32 +33,52 @@ export default function Home() {
 
   // Carrega sessões salvas no localStorage ao montar o componente
   useEffect(() => {
-    const storedSessions = localStorage.getItem("chatSessions");
-    if (storedSessions) {
-      setSessions(JSON.parse(storedSessions));
-    }
-    // Se houver uma sessão corrente salva, carrega ela
-    const lastSession = localStorage.getItem("currentSession");
-    if (lastSession) {
-      const session = JSON.parse(lastSession);
-      setCurrentSessionId(session.id);
-      setMessages(session.messages);
+    try {
+      const storedSessions = localStorage.getItem("chatSessions");
+      if (storedSessions) {
+        setSessions(JSON.parse(storedSessions));
+      }
+      
+      // Se houver uma sessão corrente salva, carrega ela
+      const lastSession = localStorage.getItem("currentSession");
+      if (lastSession) {
+        const session = JSON.parse(lastSession);
+        setCurrentSessionId(session.id);
+        setMessages(session.messages || []);
+      } else {
+        // Se não houver sessão atual, cria uma nova
+        startNewConversation();
+      }
+    } catch (error) {
+      console.error("Erro ao carregar sessões:", error);
+      // Inicia uma nova sessão em caso de erro
+      startNewConversation();
     }
   }, []);
 
   // Salva as sessões no localStorage sempre que elas mudarem
   useEffect(() => {
-    localStorage.setItem("chatSessions", JSON.stringify(sessions));
+    if (sessions.length > 0) {
+      localStorage.setItem("chatSessions", JSON.stringify(sessions));
+    }
   }, [sessions]);
 
   // Atualiza a sessão corrente sempre que as mensagens ou o id da sessão mudarem
   useEffect(() => {
     if (currentSessionId) {
-      const currentSession = { id: currentSessionId, messages, updatedAt: new Date() };
+      const currentSession = { 
+        id: currentSessionId, 
+        messages: messages, 
+        updatedAt: new Date().toISOString() 
+      };
       localStorage.setItem("currentSession", JSON.stringify(currentSession));
+      
       // Atualiza ou adiciona a sessão no histórico
       setSessions((prevSessions) => {
+        // Remove a sessão atual se já existir na lista
         const otherSessions = prevSessions.filter((s) => s.id !== currentSessionId);
+        
+        // Adiciona a sessão atualizada no início da lista
         return [currentSession, ...otherSessions];
       });
     }
@@ -66,12 +86,28 @@ export default function Home() {
 
   // Inicia uma nova conversa (nova sessão)
   const startNewConversation = () => {
-    setCurrentSessionId(new Date().getTime().toString());
+    const newSessionId = new Date().getTime().toString();
+    setCurrentSessionId(newSessionId);
     setMessages([]);
+    
+    // Adiciona a nova sessão na lista
+    const newSession = { 
+      id: newSessionId, 
+      messages: [], 
+      updatedAt: new Date().toISOString() 
+    };
+    
+    setSessions(prev => [newSession, ...prev]);
+    localStorage.setItem("currentSession", JSON.stringify(newSession));
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
+    // Cria sessão se não existir
+    if (!currentSessionId) {
+      startNewConversation();
+    }
 
     // Adiciona a mensagem do usuário
     const userMessage = { content: input, role: "user" };
@@ -144,51 +180,82 @@ export default function Home() {
   // Carrega uma sessão do histórico
   const loadSession = (session) => {
     setCurrentSessionId(session.id);
-    setMessages(session.messages);
+    setMessages(session.messages || []);
     setShowHistory(false);
+  };
+
+  // Remove uma sessão do histórico
+  const deleteSession = (sessionId, e) => {
+    e.stopPropagation(); // Evita que o clique propague para o elemento pai
+    
+    setSessions(prevSessions => {
+      const filtered = prevSessions.filter(s => s.id !== sessionId);
+      return filtered;
+    });
+    
+    // Se a sessão atual foi deletada, inicia uma nova
+    if (sessionId === currentSessionId) {
+      startNewConversation();
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
       {/* Sidebar para histórico de conversas */}
-      {showHistory && (
-        <div className="w-64 bg-gray-800 border-r border-gray-700 p-3">
-          <h2 className="text-lg font-bold mb-4">Histórico de Conversas</h2>
-          <button
-            onClick={startNewConversation}
-            className="w-full mb-4 px-3 py-2 bg-amber-500 text-black rounded-lg"
-          >
-            Nova Conversa
-          </button>
-          <ul className="space-y-2">
-            {sessions.length === 0 && (
-              <li className="text-gray-400">Nenhuma conversa salva.</li>
-            )}
-            {sessions.map((session) => (
-              <li
-                key={session.id}
-                className="cursor-pointer hover:bg-gray-700 p-2 rounded"
-                onClick={() => loadSession(session)}
+      <div 
+        className={`fixed top-0 bottom-0 left-0 z-30 bg-gray-800 border-r border-gray-700 p-3 w-64 transform transition-transform duration-300 ${
+          showHistory ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <h2 className="text-lg font-bold mb-4">Histórico de Conversas</h2>
+        <button
+          onClick={startNewConversation}
+          className="w-full mb-4 px-3 py-2 bg-amber-500 text-black rounded-lg"
+        >
+          Nova Conversa
+        </button>
+        <ul className="space-y-2 overflow-y-auto max-h-[calc(100vh-140px)]">
+          {sessions.length === 0 && (
+            <li className="text-gray-400">Nenhuma conversa salva.</li>
+          )}
+          {sessions.map((session) => (
+            <li
+              key={session.id}
+              className="cursor-pointer hover:bg-gray-700 p-2 rounded flex justify-between items-center"
+              onClick={() => loadSession(session)}
+            >
+              <p className="text-sm font-medium truncate flex-1">
+                {new Date(session.updatedAt || parseInt(session.id)).toLocaleString()}
+              </p>
+              <button 
+                onClick={(e) => deleteSession(session.id, e)}
+                className="text-gray-400 hover:text-red-500 text-sm ml-2"
               >
-                <p className="text-sm font-medium">
-                  Sessão: {new Date(parseInt(session.id)).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setShowHistory(false)}
-            className="mt-4 px-3 py-2 bg-gray-600 rounded-lg w-full"
-          >
-            Fechar
-          </button>
-        </div>
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button
+          onClick={() => setShowHistory(false)}
+          className="mt-4 px-3 py-2 bg-gray-600 rounded-lg w-full"
+        >
+          Fechar
+        </button>
+      </div>
+
+      {/* Overlay quando o histórico está aberto */}
+      {showHistory && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20"
+          onClick={() => setShowHistory(false)}
+        />
       )}
 
       {/* Área principal do chat */}
-      <div className="flex flex-col w-full max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="p-3 sm:p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+      <div className="flex flex-col w-full max-w-3xl mx-auto h-screen">
+        {/* Header fixo */}
+        <div className="sticky top-0 z-10 p-3 sm:p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
           <h1 className="text-lg sm:text-xl font-bold text-center text-amber-200">
             BuddyBot
           </h1>
@@ -204,8 +271,9 @@ export default function Home() {
         <div
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar"
+          style={{ height: "calc(100vh - 132px)" }} /* Ajusta a altura considerando header e input */
         >
-          <style jsx>{`
+          <style jsx global>{`
             /* Estilizando scrollbar para Webkit (Chrome, Safari, Edge, etc) */
             .custom-scrollbar::-webkit-scrollbar {
               width: 6px;
@@ -267,8 +335,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Área de input */}
-        <div className="p-3 sm:p-4 bg-gray-800 border-t border-gray-700">
+        {/* Área de input fixa na parte inferior */}
+        <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-gray-800 border-t border-gray-700">
           <div className="flex items-center gap-2">
             <input
               type="text"
