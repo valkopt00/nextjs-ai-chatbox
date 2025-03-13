@@ -17,14 +17,15 @@ export default function Home() {
 
   const chatContainerRef = useRef(null);
 
-  // Apenas no cliente: obtem o userId do localStorage
+  // Apenas no cliente: obter o userId do localStorage (definido após login)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setUserId(localStorage.getItem("userId"));
+      const storedUserId = localStorage.getItem("userId");
+      setUserId(storedUserId);
     }
   }, []);
 
-  // Carrega sessões salvas no localStorage após o userId estar definido
+  // Carregar sessões salvas no localStorage após ter o userId
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -42,7 +43,7 @@ export default function Home() {
             startNewConversation();
           }
         } else {
-          // Se não houver userId, utiliza as chaves genéricas
+          // Se não houver userId (por exemplo, utilizador não autenticado), usar chaves genéricas
           const storedSessions = localStorage.getItem("chatSessions");
           if (storedSessions) {
             setSessions(JSON.parse(storedSessions));
@@ -63,7 +64,7 @@ export default function Home() {
     }
   }, [userId]);
 
-  // Guarda as sessões no localStorage sempre que elas mudem
+  // Guardar as sessões no localStorage sempre que elas mudem
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (userId) {
@@ -125,11 +126,9 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     if (!currentSessionId) {
       startNewConversation();
     }
-
     const userMessage = { content: input, role: "user" };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -174,7 +173,6 @@ export default function Home() {
       const errorData = await response.json();
       throw new Error(errorData.error || "Erro ao obter resposta");
     }
-
     const data = await response.json();
     return data.output;
   };
@@ -197,6 +195,22 @@ export default function Home() {
     setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
     if (sessionId === currentSessionId) {
       startNewConversation();
+    }
+  };
+
+  // Função para logout: limpa o userId e reinicia os estados
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userId");
+      // Se quiseres também limpar os dados do histórico específico
+      if (userId) {
+        localStorage.removeItem(`chatSessions_${userId}`);
+        localStorage.removeItem(`currentSession_${userId}`);
+      }
+      setUserId(null);
+      setSessions([]);
+      setMessages([]);
+      setCurrentSessionId(null);
     }
   };
 
@@ -223,6 +237,15 @@ export default function Home() {
             >
               Histórico
             </button>
+            {/* Botão de Logout, visível se o utilizador estiver autenticado */}
+            {userId && (
+              <button
+                onClick={handleLogout}
+                className="px-3 py-2 bg-red-500 text-white rounded-lg"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
 
