@@ -16,7 +16,7 @@ const MessageInput = ({ input, setInput, handleKeyDown, sendMessage, isLoading }
         <button
           onClick={sendMessage}
           disabled={isLoading || !input.trim()}
-          className={`px-3 py-2 text-black font-medium text-sm sm:text-base rounded-lg transition-all ${
+          className={`px-3 py-2 text-amber-200 font-medium text-sm sm:text-base rounded-lg transition-all ${
             isLoading || !input.trim() ? "bg-gray-500 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600"
           }`}
         >

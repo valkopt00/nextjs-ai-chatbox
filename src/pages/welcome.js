@@ -133,7 +133,7 @@ export default function Home() {
           {/* Botão Histórico (Esquerda) */}
           <button
             onClick={() => setShowHistory(true)}
-            className="px-3 py-2 bg-amber-500 text-black rounded-lg"
+            className="px-3 py-2 bg-gray-500 text-amber-200 rounded-lg"
           >
             Histórico
           </button>
@@ -146,7 +146,7 @@ export default function Home() {
           {/* Botão Logout (Direita) */}
           <button
             onClick={handleLogout}
-            className="px-3 py-2 bg-red-500 text-white rounded-lg"
+            className="px-3 py-2 bg-gray-500 text-amber-200 rounded-lg"
           >
             Logout
           </button>
