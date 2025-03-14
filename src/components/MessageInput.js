@@ -17,7 +17,7 @@ const MessageInput = ({ input, setInput, handleKeyDown, sendMessage, isLoading }
           onClick={sendMessage}
           disabled={isLoading || !input.trim()}
           className={`px-3 py-2 text-amber-200 font-medium text-sm sm:text-base rounded-lg transition-all ${
-            isLoading || !input.trim() ? "bg-gray-500 cursor-not-allowed" : "bg-amber-500 hover:bg-amber-600"
+            isLoading || !input.trim() ? "bg-gray-200 cursor-not-allowed" : "bg-gray-500 hover:bg-gray-800"
           }`}
         >
           Enviar
