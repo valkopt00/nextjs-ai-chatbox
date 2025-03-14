@@ -9,7 +9,7 @@ const ChatHistory = ({ sessions, loadSession, deleteSession, startNewConversatio
         }`}
       >
         <h2 className="text-lg font-bold mb-4">Histórico de Conversas</h2>
-        <button onClick={startNewConversation} className="w-full mb-4 px-3 py-2 bg-amber-500 text-black rounded-lg">
+        <button onClick={startNewConversation} className="w-full mb-4 px-3 py-2 bg-amber-200 text-black rounded-lg">
           Nova Conversa
         </button>
         <ul className="space-y-2 overflow-y-auto max-h-[calc(100vh-140px)]">
