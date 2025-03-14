@@ -1,6 +1,13 @@
 import React from "react";
 
-const MessageInput = ({ input, setInput, handleKeyDown, sendMessage, isLoading }) => {
+const MessageInput = ({ input, setInput, sendMessage, isLoading }) => {
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !isLoading && input.trim()) {
+      e.preventDefault(); // Evita quebras de linha indesejadas no input
+      sendMessage();
+    }
+  };
+
   return (
     <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-gray-800 border-t border-gray-700">
       <div className="flex items-center gap-2">
