@@ -6,7 +6,7 @@ export default function Button({ text, onClick, disabled }) {
       className={`w-full py-3 rounded-md transition-all duration-200 shadow-md ${
         disabled
           ? "bg-gray-600 cursor-not-allowed opacity-50"
-          : "bg-gray-800 text-white"
+          : "bg-gray-900 text-white"
       }`}
     >
       {text}

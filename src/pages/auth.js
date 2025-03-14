@@ -139,7 +139,7 @@ export default function Auth() {
 
               {/* ✅ Link "Recuperar password" desativado se o servidor estiver offline */}
               <div className={`text-center mt-4 text-sm ${serverError || dbStatus === "offline" ? "opacity-50 pointer-events-none" : ""}`}>
-                <a onClick={() => router.push("/recover")} className="text-blue-400 hover:underline cursor-pointer">
+                <a onClick={() => router.push("/recover")} className="text-amber-200 hover:underline cursor-pointer">
                 {messages.recover?.title}
                 </a>
               </div>
@@ -148,7 +148,7 @@ export default function Auth() {
             {/* ✅ Link "Registe-se" desativado se o servidor estiver offline */}
             <p className={`text-center text-sm mt-4 ${serverError || dbStatus === "offline" ? "opacity-50 pointer-events-none" : ""}`}>
               Ainda não tem conta?{" "}
-              <a onClick={() => router.push("/register")} className="text-blue-400 hover:underline cursor-pointer">
+              <a onClick={() => router.push("/register")} className="text-amber-200 hover:underline cursor-pointer">
                 Registe-se
               </a>
             </p>
